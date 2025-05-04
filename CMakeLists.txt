@@ -29,7 +29,8 @@ add_subdirectory(external/VulkanSceneGraph)
 add_subdirectory(external/vsgXchange)
 add_subdirectory(external/vsgImGui)
 add_library(vsg::vsgImGui ALIAS vsgImGui)
+add_subdirectory(external/QuadMind/QMorphLib)
 
 add_executable(QMVision QMVision.cpp)
 
-target_link_libraries(QMVision PRIVATE vsg::vsg vsgXchange::vsgXchange vsg::vsgImGui assimp freetype glslang tracy ) 
+target_link_libraries(QMVision PRIVATE vsg::vsg vsgXchange::vsgXchange vsg::vsgImGui assimp freetype glslang tracy QMorphLib) 

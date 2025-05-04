@@ -19,3 +19,6 @@
 [submodule "external/vsgXchange"]
 	path = external/vsgXchange
 	url = https://github.com/vsg-dev/vsgXchange.git
+[submodule "external/QuadMind"]
+	path = external/QuadMind
+	url = https://github.com/RCL-Consulting/QuadMind.git

@@ -386,7 +386,7 @@ main( int argc,
 	GeomBasics::findExtremeNodes();
 
 	auto Morph = std::make_shared<QMorph>();
-    Morph->init( -1, 0.3, false );
+    Morph->init( -1, 0.6, false );
 	Morph->run();
 
     auto viewer = vsg::Viewer::create();
