@@ -19,6 +19,3 @@
 [submodule "external/vsgXchange"]
 	path = external/vsgXchange
 	url = https://github.com/vsg-dev/vsgXchange.git
-[submodule "external/SPIRV-Tools"]
-	path = external/SPIRV-Tools
-	url = https://github.com/KhronosGroup/SPIRV-Tools
