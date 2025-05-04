@@ -1,0 +1,24 @@
+[submodule "external/vsg"]
+	path = external/VulkanSceneGraph
+	url = https://github.com/vsg-dev/VulkanSceneGraph.git
+[submodule "external/assimp"]
+	path = external/assimp
+	url = https://github.com/assimp/assimp.git
+[submodule "external/freetype"]
+	path = external/freetype
+	url = https://github.com/freetype/freetype.git
+[submodule "external/glslang"]
+	path = external/glslang
+	url = https://github.com/KhronosGroup/glslang.git
+[submodule "external/imgui"]
+	path = external/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "external/tracy"]
+	path = external/tracy
+	url = https://github.com/wolfpld/tracy.git
+[submodule "external/vsgImGui"]
+	path = external/vsgImGui
+	url = https://github.com/vsg-dev/vsgImGui.git
+[submodule "external/vsgXchange"]
+	path = external/vsgXchange
+	url = https://github.com/vsg-dev/vsgXchange.git
