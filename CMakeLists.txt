@@ -5,13 +5,21 @@ project(QMVision)
 # set the use of C++17 globally as all examples require it
 set(CMAKE_CXX_STANDARD 17)
 
-add_subdirectory(external/VulkanSceneGraph)
-add_subdirectory(external/vsgXchange)
 add_subdirectory(external/assimp)
 add_subdirectory(external/freetype)
+
+# Allow glslang to use your local SPIRV-Tools
+set(ALLOW_EXTERNAL_SPIRV_TOOLS ON CACHE BOOL "" FORCE)
+set(SPIRV_TOOLS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/SPIRV-Tools)
+
+add_subdirectory(${SPIRV_TOOLS_SOURCE_DIR})  # Build SPIRV-Tools first
+
+# Now build glslang (which will use SPIRV-Tools)
 add_subdirectory(external/glslang)
-add_subdirectory(external/imgui)
+
 add_subdirectory(external/tracy)
+add_subdirectory(external/VulkanSceneGraph)
+add_subdirectory(external/vsgXchange)
 add_subdirectory(external/vsgImGui)
 
 add_executable(QMVision QMVision.cpp)
