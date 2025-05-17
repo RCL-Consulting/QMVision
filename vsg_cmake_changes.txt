@@ -1,7 +1,0 @@
-#find_package(glslang ${GLSLANG_MIN_VERSION} CONFIG QUIET)
-	if (TARGET glslang)
-		message(STATUS "glslang already built as part of project.")
-		set(glslang_FOUND TRUE)
-	else()
-		find_package(glslang QUIET)
-	endif()

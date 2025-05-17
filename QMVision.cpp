@@ -496,7 +496,7 @@ main( int argc,
 
             auto label = vsg::Text::create();
             label->font = font;
-            label->text = vsg::stringValue::create( std::to_string( node->mNumber ) );
+            label->text = vsg::stringValue::create( std::to_string( node->GetNumber() ) );
             label->layout = layout;
             label->setup( 0, options );
 
