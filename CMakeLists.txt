@@ -55,27 +55,9 @@ if(FETCH_DEPENDENCIES)
 		endif()
 	endif()
 	
-	# Run strip_cmake_installs.py
-	message(STATUS "Stripping install() commands from vendored CMakeLists.txt files...")
-	execute_process(
-		COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cmake/strip_cmake_installs.py ${CMAKE_SOURCE_DIR}
-		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-		RESULT_VARIABLE STRIP_RESULT
-	)
-	if(NOT STRIP_RESULT EQUAL 0)
-		message(FATAL_ERROR "Failed to strip install() calls from vendored projects.")
-	endif()
-	
-	execute_process(
-		COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cmake/patch_vsg_find_glslang.py ${CMAKE_SOURCE_DIR}
-		RESULT_VARIABLE PATCH_RESULT
-	)
-	if(NOT PATCH_RESULT EQUAL 0)
-		message(FATAL_ERROR "Failed to patch VSG glslang detection.")
-	endif()
-	
 endif()
 
+add_subdirectory(external/tracy)
 add_subdirectory(external/assimp)
 add_subdirectory(external/freetype)
 add_library(Freetype::Freetype ALIAS freetype)
@@ -95,19 +77,48 @@ add_subdirectory(${SPIRV_TOOLS_SOURCE_DIR})  # Build SPIRV-Tools first
 
 # Now build glslang (which will use SPIRV-Tools)
 add_subdirectory(external/glslang)
-# Help VSG believe glslang is "found"
+# Aliases must exist *before* VSG is added
+if(TARGET glslang)
+    add_library(glslang::glslang ALIAS glslang)
+endif()
+
+if(TARGET SPIRV)
+    add_library(glslang::SPIRV ALIAS SPIRV)
+endif()
+
+if(TARGET glslang-default-resource-limits)
+    add_library(glslang::glslang-default-resource-limits ALIAS glslang-default-resource-limits)
+endif()
+
+# Declare glslang_FOUND before VSG uses it
 set(glslang_FOUND TRUE CACHE BOOL "" FORCE)
 
-# Export the expected targets
-add_library(glslang::glslang ALIAS glslang)
-add_library(glslang::SPIRV ALIAS SPIRV)  # Some versions of glslang use this target
-add_library(glslang::glslang-default-resource-limits ALIAS glslang-default-resource-limits)
-
-add_subdirectory(external/tracy)
-
 set(VSG_BUILD_INSTALL OFF CACHE BOOL "" FORCE)
+set(VSG_SUPPORTS_ShaderCompiler ON CACHE BOOL "Enable shader compiler support" FORCE)
+
+if (TARGET glslang)
+    message(STATUS "TARGET glslang exists ✅")
+else()
+    message(WARNING "TARGET glslang does NOT exist ❌")
+endif()
+
+if (TARGET glslang::glslang)
+    message(STATUS "ALIAS glslang::glslang exists ✅")
+else()
+    message(WARNING "ALIAS glslang::glslang does NOT exist ❌")
+endif()
 
 add_subdirectory(external/VulkanSceneGraph)
+
+# Defer until vsg target is available
+add_custom_target(copy_vsg_dll ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:vsg>
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    DEPENDS vsg
+    COMMENT "Copying vsg.dll to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+)
+
 add_subdirectory(external/vsgXchange)
 add_subdirectory(external/vsgImGui)
 add_library(vsg::vsgImGui ALIAS vsgImGui)

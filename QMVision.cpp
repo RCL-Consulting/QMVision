@@ -32,7 +32,7 @@ void main()
 {
     fragmentColor = rasterColor;
 }
-)" };
+)" }; 
 
 template<typename T>
 vsg::ref_ptr<vsg::VertexDraw> createEdgeOverlay( const ArrayList<std::shared_ptr<T>>& elements )
