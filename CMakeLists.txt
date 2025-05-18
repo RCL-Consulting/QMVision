@@ -5,7 +5,19 @@ project(QMVision)
 # set the use of C++17 globally as all examples require it
 set(CMAKE_CXX_STANDARD 20)
 
-set(VSG_BUILD_INSTALL OFF CACHE BOOL "Disable install export targets in VSG" FORCE)
+set(VSG_ADD_CMAKE_SUPPORT_FILES OFF CACHE BOOL "" FORCE)
+set(VSGXCHANGE_ADD_CMAKE_SUPPORT_FILES OFF CACHE BOOL "" FORCE)
+set(VSGIMGUI_ADD_CMAKE_SUPPORT_FILES OFF CACHE BOOL "" FORCE)
+set(SPIRV_SKIP_EXECUTABLES ON CACHE BOOL "" FORCE)
+set(ENABLE_GLSLANG_BINARIES OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(VSG_INSTALL_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(VSG_INSTALL OFF CACHE BOOL "" FORCE)
+
+if(MSVC)
+    add_compile_options(/wd4251)
+endif()
+
 option(FETCH_DEPENDENCIES "Automatically fetch vendored dependencies" ON)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)    # For .exe/.dll
@@ -55,6 +67,22 @@ if(FETCH_DEPENDENCIES)
 		endif()
 	endif()
 	
+	# --- Patch VSG-related macro guards before configuring them ---
+	execute_process(
+		COMMAND ${CMAKE_COMMAND} -E env PYTHONIOENCODING=utf-8
+				${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/cmake/patch_vsg_macros.py
+		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+		RESULT_VARIABLE _patch_result
+		OUTPUT_VARIABLE _patch_out
+		ERROR_VARIABLE _patch_err
+	)
+
+	if(NOT _patch_result EQUAL 0)
+		message(FATAL_ERROR "Failed to patch VSG macros:\n${_patch_out}\n${_patch_err}")
+	else()
+		message(STATUS "✅ VSG macros patched successfully:\n${_patch_out}")
+	endif()
+	
 endif()
 
 add_subdirectory(external/tracy)
@@ -65,48 +93,48 @@ set(FREETYPE_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/external/freetype/include
 set(FREETYPE_LIBRARY freetype)
 set(Freetype_FOUND TRUE)
 
-# Allow glslang to use your local SPIRV-Tools
-set(ALLOW_EXTERNAL_SPIRV_TOOLS ON CACHE BOOL "" FORCE)
-set(SPIRV_TOOLS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/SPIRV-Tools)
-if (MSVC)
-    add_compile_definitions(_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
-    add_compile_options(/wd4251)  # Suppress "needs to have dll-interface"
-endif()
-
-add_subdirectory(${SPIRV_TOOLS_SOURCE_DIR})  # Build SPIRV-Tools first
-
-# Now build glslang (which will use SPIRV-Tools)
+#add_subdirectory(external/SPIRV-Tools/SPIRV-Headers)
+add_subdirectory(external/SPIRV-Tools)
 add_subdirectory(external/glslang)
-# Aliases must exist *before* VSG is added
-if(TARGET glslang)
-    add_library(glslang::glslang ALIAS glslang)
+
+# --- Generate glslangConfig.cmake for VSG compatibility ---
+set(GLSLANG_CONFIG_DIR "${CMAKE_BINARY_DIR}/fake_glslang_config/glslang")
+file(MAKE_DIRECTORY "${GLSLANG_CONFIG_DIR}")
+
+file(WRITE "${GLSLANG_CONFIG_DIR}/glslangConfig.cmake"
+"
+if(NOT TARGET glslang::glslang)
+  add_library(glslang::glslang INTERFACE IMPORTED)
+  set_target_properties(glslang::glslang PROPERTIES INTERFACE_LINK_LIBRARIES glslang)
 endif()
 
-if(TARGET SPIRV)
-    add_library(glslang::SPIRV ALIAS SPIRV)
+if(NOT TARGET glslang::SPIRV)
+  add_library(glslang::SPIRV INTERFACE IMPORTED)
+  set_target_properties(glslang::SPIRV PROPERTIES INTERFACE_LINK_LIBRARIES SPIRV)
 endif()
+")
 
-if(TARGET glslang-default-resource-limits)
-    add_library(glslang::glslang-default-resource-limits ALIAS glslang-default-resource-limits)
-endif()
+file(WRITE "${GLSLANG_CONFIG_DIR}/glslangConfigVersion.cmake"
+"
+set(PACKAGE_VERSION \"999.0.0\")
 
-# Declare glslang_FOUND before VSG uses it
-set(glslang_FOUND TRUE CACHE BOOL "" FORCE)
-
-set(VSG_BUILD_INSTALL OFF CACHE BOOL "" FORCE)
-set(VSG_SUPPORTS_ShaderCompiler ON CACHE BOOL "Enable shader compiler support" FORCE)
-
-if (TARGET glslang)
-    message(STATUS "TARGET glslang exists ✅")
+if(PACKAGE_FIND_VERSION VERSION_GREATER PACKAGE_VERSION)
+  set(PACKAGE_VERSION_COMPATIBLE FALSE)
 else()
-    message(WARNING "TARGET glslang does NOT exist ❌")
+  set(PACKAGE_VERSION_COMPATIBLE TRUE)
+  set(PACKAGE_VERSION_EXACT FALSE)
 endif()
+")
 
-if (TARGET glslang::glslang)
-    message(STATUS "ALIAS glslang::glslang exists ✅")
-else()
-    message(WARNING "ALIAS glslang::glslang does NOT exist ❌")
-endif()
+# --- Set glslang_DIR in cache so VSG can see it ---
+set(glslang_DIR "${GLSLANG_CONFIG_DIR}" CACHE PATH "Expose glslang_DIR to subdirectories" FORCE)
+
+# --- Diagnostics ---
+message(STATUS ">>> glslang_DIR = ${glslang_DIR}")
+file(GLOB check_glslang_config "${glslang_DIR}/glslangConfig.cmake")
+message(STATUS ">>> Final sanity check for glslangConfig: ${check_glslang_config}")
+find_package(glslang CONFIG REQUIRED)
+message(STATUS "✅ Manual find_package(glslang) succeeded")
 
 add_subdirectory(external/VulkanSceneGraph)
 
