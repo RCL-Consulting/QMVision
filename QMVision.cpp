@@ -8,6 +8,7 @@
 #include "Quad.h"
 #include "Element.h"
 #include "Edge.h"
+#include "Msg.h"
 
 #include <filesystem>
 
@@ -379,6 +380,8 @@ main( int argc,
 	std::string inputFilename = argv[1];
 	std::filesystem::path inputPath( inputFilename );
 
+    Msg::initLog( "c:/junk/QMVision.log" );
+
 	GeomBasics::clearLists();
 
 	GeomBasics::setParams( inputPath.filename().string(), inputPath.parent_path().string(), false, false );
@@ -527,6 +530,8 @@ main( int argc,
         viewer->recordAndSubmit();
         viewer->present();
     }
+
+    Msg::shutdownLog();
 
 	return 0;
 }
