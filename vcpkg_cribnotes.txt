@@ -1,0 +1,4 @@
+git clone https://github.com/microsoft/vcpkg C:\vcpkg
+C:\vcpkg\bootstrap-vcpkg.bat
+C:\vcpkg\vcpkg install wxwidgets:x64-windows
+C:\vcpkg\vcpkg install glad:x64-windows
